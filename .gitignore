@@ -1,5 +1,4 @@
 *.jar
 *.iml
 .*
-build
-gradle
+target
