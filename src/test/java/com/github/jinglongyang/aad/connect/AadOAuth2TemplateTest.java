@@ -14,6 +14,8 @@ public class AadOAuth2TemplateTest {
     private static final String TENANT_CONTEXT_ID = "graphDir1.onMicrosoft.com";
     private static final String CLIENT_ID = "118473c2-7619-46e3-a8e4-6da8d5f56e12";
     private static final String CLIENT_SECRET = "hOrJ0r0TZ4GQ3obp+vk3FZ7JBVP+TX353kNo6QwNq7Q=";
+    public static final String AAD_RESOURCE = "https://graph.windows.net";
+
     private static final AadOAuth2Template TEMPLATE = new AadOAuth2Template(TENANT_CONTEXT_ID, CLIENT_ID, CLIENT_SECRET);
 
     @Test
@@ -25,9 +27,9 @@ public class AadOAuth2TemplateTest {
 
     @Test
     public void testAuthClientWithResource() {
-        AccessGrant accessGrant = TEMPLATE.authenticateClient("https://graph.windows.net");
+        AccessGrant accessGrant = TEMPLATE.authenticateClient(AAD_RESOURCE);
         assertCommonFields(accessGrant);
-        assertEquals("https://graph.windows.net", accessGrant.getResource());
+        assertEquals(AAD_RESOURCE, accessGrant.getResource());
     }
 
     private void assertCommonFields(AccessGrant accessGrant) {
