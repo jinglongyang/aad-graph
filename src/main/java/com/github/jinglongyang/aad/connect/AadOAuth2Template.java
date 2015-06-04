@@ -23,7 +23,8 @@ import com.github.jinglongyang.aad.domain.AccessGrant;
 import com.google.common.collect.Lists;
 
 public class AadOAuth2Template {
-    private static final String TOKEN_URL = "https://login.windows.net/%s/oauth2/token?api-version=%s";
+    private static final String AAD_TOKEN_URL = "https://login.windows.net/%s/oauth2/token?api-version=%s";
+
     private final String clientId;
     private final String clientSecret;
     private final String accessTokenUrl;
@@ -34,7 +35,7 @@ public class AadOAuth2Template {
     }
 
     public AadOAuth2Template(String tenantContextId, String clientId, String clientSecret, String version) {
-        this.accessTokenUrl = String.format(TOKEN_URL, tenantContextId, version);
+        this.accessTokenUrl = String.format(AAD_TOKEN_URL, tenantContextId, version);
         this.clientId = clientId;
         this.clientSecret = clientSecret;
     }
@@ -48,9 +49,7 @@ public class AadOAuth2Template {
         params.set("client_id", clientId);
         params.set("client_secret", clientSecret);
         params.set("grant_type", "client_credentials");
-        if (resource != null) {
-            params.set("resource", resource);
-        }
+        params.set("resource", resource);
         return getRestTemplate().postForObject(accessTokenUrl, params, AccessGrant.class);
     }
 
