@@ -30,7 +30,6 @@ import com.github.jinglongyang.aad.domain.InventoryEntry;
 import com.github.jinglongyang.aad.domain.LicenseType;
 import com.github.jinglongyang.aad.domain.OfflineLicense;
 import com.github.jinglongyang.aad.domain.ProductDetail;
-import com.github.jinglongyang.aad.domain.ProductKey;
 import com.github.jinglongyang.aad.domain.ProductPackageDetail;
 import com.github.jinglongyang.aad.repository.AccessTokenRepository;
 import com.google.common.collect.Lists;
@@ -61,14 +60,6 @@ public class DefaultBspService implements BspService {
         this.restTemplate = restTemplate;
     }
 
-    public InventoryEntries getInventory(AuthenticationRequest request) {
-        return getInventory(request, null, null, null, null);
-    }
-
-    public InventoryEntries getInventory(AuthenticationRequest request, LicenseType licenseType) {
-        return getInventory(request, licenseType, null, null, null);
-    }
-
     public InventoryEntries getInventory(AuthenticationRequest request, LicenseType licenseType, Date modifiedSince, String continuationToken, Integer maxResults) {
         Map<String, String> params = new HashMap<>();
         if (licenseType != null) {
@@ -88,28 +79,13 @@ public class DefaultBspService implements BspService {
     }
 
     @Override
-    public ProductDetail getProductDetail(AuthenticationRequest request, ProductKey productKey) {
-        return getProductDetail(request, productKey.getProductId(), productKey.getSkuId());
-    }
-
-    @Override
     public ProductDetail getProductDetail(AuthenticationRequest request, String productId, String skuId) {
         return getForObject(request, String.format("%s/Products/%s/%s", url, productId, skuId), ProductDetail.class);
     }
 
     @Override
-    public OfflineLicense getOfflineLicense(AuthenticationRequest request, ProductKey productKey, String contentId) {
-        return getOfflineLicense(request, productKey.getProductId(), productKey.getSkuId(), contentId);
-    }
-
-    @Override
     public OfflineLicense getOfflineLicense(AuthenticationRequest request, String productId, String skuId, String contentId) {
         return postForObject(request, String.format("%s/Products/%s/%s/OfflineLicense/%s", url, productId, skuId, contentId), OfflineLicense.class);
-    }
-
-    @Override
-    public ProductPackageDetail getProductPackage(AuthenticationRequest request, ProductKey productKey) {
-        return getProductPackage(request, productKey.getProductId(), productKey.getSkuId());
     }
 
     @Override

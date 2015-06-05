@@ -1,6 +1,5 @@
 package com.github.jinglongyang.aad.service;
 
-import java.util.Date;
 import java.util.List;
 
 import org.junit.Test;
@@ -27,7 +26,7 @@ public class DefaultBspServiceTest {
     @Test
     public void testGetInventory() throws Exception {
         BspService bspService = new DefaultBspService(new AadOAuth2Repository());
-        InventoryEntries inventoryEntries = bspService.getInventory(request, LicenseType.OFFLINE, new Date(), null, null);
+        InventoryEntries inventoryEntries = bspService.getInventory(request, LicenseType.OFFLINE, null, null, null);
         assertNotNull(inventoryEntries);
         assertNull(inventoryEntries.getContinuationToken());
         List<InventoryEntry> entries = inventoryEntries.getInventoryEntries();
