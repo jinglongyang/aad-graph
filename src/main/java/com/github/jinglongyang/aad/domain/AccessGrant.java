@@ -1,7 +1,9 @@
 package com.github.jinglongyang.aad.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AccessGrant {
     @JsonProperty("token_type")
     private String tokenType;
