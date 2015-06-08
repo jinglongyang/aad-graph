@@ -13,6 +13,7 @@ public class ProductDetail {
     private String etag;
     private List<ContentDetail> contentDetails;
     private List<AlternateId> alternateIds;
+    private List<String> supportedLanguages;
 
     public ProductKey getProductKey() {
         return productKey;
@@ -92,5 +93,13 @@ public class ProductDetail {
 
     public void setAlternateIds(List<AlternateId> alternateIds) {
         this.alternateIds = alternateIds;
+    }
+
+    public List<String> getSupportedLanguages() {
+        return supportedLanguages;
+    }
+
+    public void setSupportedLanguages(List<String> supportedLanguages) {
+        this.supportedLanguages = supportedLanguages;
     }
 }

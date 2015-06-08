@@ -1,4 +1,4 @@
-package com.github.jinglongyang.aad.repository;
+package com.github.jinglongyang.aad.service.support;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jinglongyang.aad.domain.AccessGrant;
 import com.github.jinglongyang.aad.domain.AuthenticationRequest;
+import com.github.jinglongyang.aad.repository.AccessTokenRepository;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -54,6 +55,7 @@ public class AadOAuth2Repository implements AccessTokenRepository {
         restTemplate.setRequestFactory(requestFactory);
     }
 
+    @Override
     public String acquireToken(AuthenticationRequest request) {
         String token = cache.getUnchecked(request);
         LOG.debug("The BSP access token is [{}]", token);
@@ -69,6 +71,7 @@ public class AadOAuth2Repository implements AccessTokenRepository {
         if (request.getResource() != null) {
             params.set("resource", request.getResource());
         }
+        //TODO error handling
         return restTemplate.postForObject(accessTokenUrl, params, AccessGrant.class);
     }
 

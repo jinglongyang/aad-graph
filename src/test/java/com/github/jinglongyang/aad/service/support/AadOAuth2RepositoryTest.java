@@ -1,4 +1,4 @@
-package com.github.jinglongyang.aad.repository;
+package com.github.jinglongyang.aad.service.support;
 
 import org.junit.Test;
 import org.slf4j.Logger;

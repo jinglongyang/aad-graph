@@ -1,7 +1,9 @@
 package com.github.jinglongyang.aad.service;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -16,9 +18,10 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpMessageConverterExtractor;
 import org.springframework.web.client.RequestCallback;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -28,6 +31,7 @@ import com.github.jinglongyang.aad.domain.AuthenticationRequest;
 import com.github.jinglongyang.aad.domain.InventoryEntries;
 import com.github.jinglongyang.aad.domain.InventoryEntry;
 import com.github.jinglongyang.aad.domain.LicenseType;
+import com.github.jinglongyang.aad.domain.LocalizedProductDetail;
 import com.github.jinglongyang.aad.domain.OfflineLicense;
 import com.github.jinglongyang.aad.domain.ProductDetail;
 import com.github.jinglongyang.aad.domain.ProductPackageDetail;
@@ -60,35 +64,57 @@ public class BspServiceTemplate {
     }
 
     public InventoryEntries getInventory(AuthenticationRequest request, LicenseType licenseType, Date modifiedSince, String continuationToken, Integer maxResults) {
-        UriComponentsBuilder builder = UriComponentsBuilder
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        if (licenseType != null) {
+            params.add("licenseType", licenseType.toString());
+        }
+        if (continuationToken != null) {
+            params.add("continuationToken", encode(continuationToken));
+        }
+        if (maxResults != null) {
+            params.add("maxResults", maxResults.toString());
+        }
+        if (modifiedSince != null) {
+            params.add("modifiedSince", encode(new SimpleDateFormat(InventoryEntry.DATE_PATTERN).format(modifiedSince)));
+        }
+        URI uri = UriComponentsBuilder
                 .fromHttpUrl(url)
                 .pathSegment("Inventory")
-                .queryParam("licenseType", licenseType)
-                .queryParam("continuationToken", continuationToken)
-                .queryParam("maxResults", maxResults);
-        if (modifiedSince != null) {
-            builder.queryParam("modifiedSince", new SimpleDateFormat(InventoryEntry.DATE_PATTERN).format(modifiedSince));
-        }
-        return getForObject(request, builder.build().toUri(), InventoryEntries.class);
+                .queryParams(params)
+                .build()
+                .toUri();
+        return getForObject(request, uri, InventoryEntries.class);
     }
 
     public ProductDetail getProductDetail(AuthenticationRequest request, String productId, String skuId) {
         URI uri = UriComponentsBuilder.fromHttpUrl(url)
                 .pathSegment("Products")
-                .pathSegment(productId)
-                .pathSegment(skuId)
+                .pathSegment(encode(productId))
+                .pathSegment(encode(skuId))
                 .build()
                 .toUri();
         return getForObject(request, uri, ProductDetail.class);
     }
 
+    public LocalizedProductDetail getLocalizedProductDetail(AuthenticationRequest request, String productId, String skuId, String languange) {
+        URI uri = UriComponentsBuilder.fromHttpUrl(url)
+                .pathSegment("Products")
+                .pathSegment(encode(productId))
+                .pathSegment(encode(skuId))
+                .pathSegment("LocalizedDetails")
+                .pathSegment(encode(languange))
+                .build()
+                .toUri();
+        return getForObject(request, uri, LocalizedProductDetail.class);
+    }
+
     public OfflineLicense getOfflineLicense(AuthenticationRequest request, String productId, String skuId, String contentId) {
         URI uri = UriComponentsBuilder.fromHttpUrl(url)
                 .pathSegment("Products")
-                .pathSegment(productId)
-                .pathSegment(skuId)
+                .pathSegment(encode(productId))
+                .pathSegment(encode(skuId))
                 .pathSegment("OfflineLicense")
-                .pathSegment(contentId)
+                .pathSegment(encode(contentId))
                 .build()
                 .toUri();
         return postForObject(request, uri, OfflineLicense.class);
@@ -97,26 +123,27 @@ public class BspServiceTemplate {
     public ProductPackageDetail getProductPackage(AuthenticationRequest request, String productId, String skuId) {
         URI uri = UriComponentsBuilder.fromHttpUrl(url)
                 .pathSegment("Products")
-                .pathSegment(productId)
-                .pathSegment(skuId)
+                .pathSegment(encode(productId))
+                .pathSegment(encode(skuId))
                 .pathSegment("Packages")
                 .build()
                 .toUri();
         return getForObject(request, uri, ProductPackageDetail.class);
     }
 
-    private <T> T getForObject(AuthenticationRequest request, URI uri, Class<T> responseType) throws RestClientException {
+    private <T> T getForObject(AuthenticationRequest request, URI uri, Class<T> responseType) {
         return execute(request, uri, HttpMethod.GET, responseType);
     }
 
-    private <T> T postForObject(AuthenticationRequest request, URI uri, Class<T> responseType) throws RestClientException {
+    private <T> T postForObject(AuthenticationRequest request, URI uri, Class<T> responseType) {
         return execute(request, uri, HttpMethod.POST, responseType);
     }
 
-    public <T> T execute(AuthenticationRequest request, URI uri, HttpMethod method, Class<T> responseType) throws RestClientException {
+    private <T> T execute(AuthenticationRequest request, URI uri, HttpMethod method, Class<T> responseType) {
         LOG.debug("The parameter is {}", uri);
         RequestCallback requestCallback = new AuthorizationHeaderRequestCallback(accessTokenRepository, request);
         HttpMessageConverterExtractor<T> responseExtractor = new HttpMessageConverterExtractor<>(responseType, getMessageConverters());
+        //TODO error handling
         return restTemplate.execute(uri, method, requestCallback, responseExtractor);
     }
 
@@ -145,6 +172,18 @@ public class BspServiceTemplate {
         public void doWithRequest(ClientHttpRequest request) throws IOException {
             String token = accessTokenRepository.acquireToken(authenticationRequest);
             request.getHeaders().add("Authorization", String.format("Bearer %s", token));
+        }
+    }
+
+    private String encode(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            LOG.warn("Exception while trying to encode path/query parameter with UTF-8", e);
+            return value;
         }
     }
 }
