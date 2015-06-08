@@ -13,18 +13,19 @@ public enum LicenseType {
         this.value = value;
     }
 
-    public String getValue() {
+    public String toString() {
         return value;
     }
 
     @JsonCreator
     public static LicenseType fromValue(String value) {
-        if (StringUtils.equalsIgnoreCase(ONLINE.getValue(), value)) {
+        if (StringUtils.equalsIgnoreCase(ONLINE.name(), value)) {
             return ONLINE;
         }
-        if (StringUtils.equalsIgnoreCase(OFFLINE.getValue(), value)) {
+        if (StringUtils.equalsIgnoreCase(OFFLINE.name(), value)) {
             return OFFLINE;
         }
-        throw new IllegalArgumentException(String.format("Invalid value %s, it can only be online and offline", value));
+        throw new IllegalArgumentException(String.format("Invalid value [%s], it can only be online and offline", value));
     }
+
 }

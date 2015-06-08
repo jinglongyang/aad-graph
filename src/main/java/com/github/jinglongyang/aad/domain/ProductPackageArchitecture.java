@@ -27,6 +27,6 @@ public enum ProductPackageArchitecture {
         if (StringUtils.equalsIgnoreCase(ARM.getValue(), value)) {
             return ARM;
         }
-        throw new IllegalArgumentException(String.format("Invalid value %s, it can only be x64, x86 and arm", value));
+        throw new IllegalArgumentException(String.format("Invalid value [%s], it can only be x64, x86 and arm", value));
     }
 }

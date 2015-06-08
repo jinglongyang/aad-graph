@@ -3,6 +3,8 @@ package com.github.jinglongyang.aad.repository;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -22,6 +24,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 
 public class AadOAuth2Repository implements AccessTokenRepository {
+    private static final Logger LOG = LoggerFactory.getLogger(AadOAuth2Repository.class);
+
     private static final String AAD_TOKEN_URL = "https://login.windows.net/%s/oauth2/token?api-version=%s";
     private static final int EXPIRE_IN = 3500;
 
@@ -51,7 +55,9 @@ public class AadOAuth2Repository implements AccessTokenRepository {
     }
 
     public String acquireToken(AuthenticationRequest request) {
-        return cache.getUnchecked(request);
+        String token = cache.getUnchecked(request);
+        LOG.debug("The BSP access token is [{}]", token);
+        return token;
     }
 
     private AccessGrant authenticateClient(AuthenticationRequest request) {

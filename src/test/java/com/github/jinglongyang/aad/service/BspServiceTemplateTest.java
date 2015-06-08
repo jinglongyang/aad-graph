@@ -15,7 +15,7 @@ import com.github.jinglongyang.aad.repository.AadOAuth2Repository;
 
 import static junit.framework.Assert.*;
 
-public class DefaultBspServiceTest {
+public class BspServiceTemplateTest {
     private static final String TENANT_CONTEXT_ID = "graphDir1.onMicrosoft.com";
     private static final String CLIENT_ID = "118473c2-7619-46e3-a8e4-6da8d5f56e12";
     private static final String CLIENT_SECRET = "hOrJ0r0TZ4GQ3obp+vk3FZ7JBVP+TX353kNo6QwNq7Q=";
@@ -25,7 +25,7 @@ public class DefaultBspServiceTest {
 
     @Test
     public void testGetInventory() throws Exception {
-        BspService bspService = new DefaultBspService(new AadOAuth2Repository());
+        BspServiceTemplate bspService = new BspServiceTemplate(new AadOAuth2Repository());
         InventoryEntries inventoryEntries = bspService.getInventory(request, LicenseType.OFFLINE, null, null, null);
         assertNotNull(inventoryEntries);
         assertNull(inventoryEntries.getContinuationToken());
@@ -38,21 +38,21 @@ public class DefaultBspServiceTest {
 
     @Test
     public void testGetProductDetail() throws Exception {
-        BspService bspService = new DefaultBspService(new AadOAuth2Repository());
+        BspServiceTemplate bspService = new BspServiceTemplate(new AadOAuth2Repository());
         ProductDetail productDetail = bspService.getProductDetail(request, "9WZDNCRFJB5Q", "0015");
         assertNotNull(productDetail);
     }
 
     @Test
     public void testGetOfflineLicense() throws Exception {
-        BspService bspService = new DefaultBspService(new AadOAuth2Repository());
+        BspServiceTemplate bspService = new BspServiceTemplate(new AadOAuth2Repository());
         OfflineLicense offlineLicense = bspService.getOfflineLicense(request, "9WZDNCRFJB5Q", "0015", "feb9764f-4e7e-2548-28cd-3681491ef81f");
         assertNotNull(offlineLicense);
     }
 
     @Test
     public void testGetProductPackageDetail() throws Exception {
-        BspService bspService = new DefaultBspService(new AadOAuth2Repository());
+        BspServiceTemplate bspService = new BspServiceTemplate(new AadOAuth2Repository());
         ProductPackageDetail productPackage = bspService.getProductPackage(request, "9WZDNCRFJB5Q", "0015");
         assertNotNull(productPackage);
     }

@@ -1,11 +1,10 @@
 package com.github.jinglongyang.aad.service;
 
 import java.io.IOException;
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +20,7 @@ import org.springframework.web.client.HttpMessageConverterExtractor;
 import org.springframework.web.client.RequestCallback;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,14 +34,13 @@ import com.github.jinglongyang.aad.domain.ProductPackageDetail;
 import com.github.jinglongyang.aad.repository.AccessTokenRepository;
 import com.google.common.collect.Lists;
 
-public class DefaultBspService implements BspService {
-    private static final Logger logger = LoggerFactory.getLogger(DefaultBspService.class);
-
+public class BspServiceTemplate {
+    private static final Logger LOG = LoggerFactory.getLogger(BspServiceTemplate.class);
     private String url = "https://bspmts.mp.microsoft.com/vDraft1";
     private AccessTokenRepository accessTokenRepository;
     private RestTemplate restTemplate;
 
-    public DefaultBspService(AccessTokenRepository accessTokenRepository) {
+    public BspServiceTemplate(AccessTokenRepository accessTokenRepository) {
         this.accessTokenRepository = accessTokenRepository;
         restTemplate = createRestTemplate();
     }
@@ -55,57 +54,74 @@ public class DefaultBspService implements BspService {
         return new RestTemplate(converters);
     }
 
-    public DefaultBspService(AccessTokenRepository accessTokenRepository, RestTemplate restTemplate) {
+    public BspServiceTemplate(AccessTokenRepository accessTokenRepository, RestTemplate restTemplate) {
         this.accessTokenRepository = accessTokenRepository;
         this.restTemplate = restTemplate;
     }
 
     public InventoryEntries getInventory(AuthenticationRequest request, LicenseType licenseType, Date modifiedSince, String continuationToken, Integer maxResults) {
-        Map<String, String> params = new HashMap<>();
-        if (licenseType != null) {
-            params.put("licenseType", licenseType.getValue());
-        }
-        if (continuationToken != null) {
-            params.put("continuationToken", continuationToken);
-        }
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromHttpUrl(url)
+                .pathSegment("Inventory")
+                .queryParam("licenseType", licenseType)
+                .queryParam("continuationToken", continuationToken)
+                .queryParam("maxResults", maxResults);
         if (modifiedSince != null) {
-            params.put("modifiedSince", new SimpleDateFormat(InventoryEntry.DATE_PATTERN).format(modifiedSince));
+            builder.queryParam("modifiedSince", new SimpleDateFormat(InventoryEntry.DATE_PATTERN).format(modifiedSince));
         }
-        if (maxResults != null) {
-            params.put("maxResults", maxResults.toString());
-        }
-        logger.debug("The parameter is {}", params);
-        return getForObject(request, String.format("%s/Inventory", url), InventoryEntries.class, params);
+        return getForObject(request, builder.build().toUri(), InventoryEntries.class);
     }
 
-    @Override
     public ProductDetail getProductDetail(AuthenticationRequest request, String productId, String skuId) {
-        return getForObject(request, String.format("%s/Products/%s/%s", url, productId, skuId), ProductDetail.class);
+        URI uri = UriComponentsBuilder.fromHttpUrl(url)
+                .pathSegment("Products")
+                .pathSegment(productId)
+                .pathSegment(skuId)
+                .build()
+                .toUri();
+        return getForObject(request, uri, ProductDetail.class);
     }
 
-    @Override
     public OfflineLicense getOfflineLicense(AuthenticationRequest request, String productId, String skuId, String contentId) {
-        return postForObject(request, String.format("%s/Products/%s/%s/OfflineLicense/%s", url, productId, skuId, contentId), OfflineLicense.class);
+        URI uri = UriComponentsBuilder.fromHttpUrl(url)
+                .pathSegment("Products")
+                .pathSegment(productId)
+                .pathSegment(skuId)
+                .pathSegment("OfflineLicense")
+                .pathSegment(contentId)
+                .build()
+                .toUri();
+        return postForObject(request, uri, OfflineLicense.class);
     }
 
-    @Override
     public ProductPackageDetail getProductPackage(AuthenticationRequest request, String productId, String skuId) {
-        return getForObject(request, String.format("%s/Products/%s/%s/Packages", url, productId, skuId), ProductPackageDetail.class);
+        URI uri = UriComponentsBuilder.fromHttpUrl(url)
+                .pathSegment("Products")
+                .pathSegment(productId)
+                .pathSegment(skuId)
+                .pathSegment("Packages")
+                .build()
+                .toUri();
+        return getForObject(request, uri, ProductPackageDetail.class);
     }
 
-    private <T> T getForObject(AuthenticationRequest request, String url, Class<T> responseType, Object... urlVariables) throws RestClientException {
-        return execute(request, url, HttpMethod.GET, responseType, urlVariables);
+    private <T> T getForObject(AuthenticationRequest request, URI uri, Class<T> responseType) throws RestClientException {
+        return execute(request, uri, HttpMethod.GET, responseType);
     }
 
-    private <T> T postForObject(AuthenticationRequest request, String url, Class<T> responseType, Object... urlVariables) throws RestClientException {
-        return execute(request, url, HttpMethod.POST, responseType, urlVariables);
+    private <T> T postForObject(AuthenticationRequest request, URI uri, Class<T> responseType) throws RestClientException {
+        return execute(request, uri, HttpMethod.POST, responseType);
     }
 
-    public <T> T execute(AuthenticationRequest request, String url, HttpMethod method, Class<T> responseType, Object... urlVariables) throws RestClientException {
+    public <T> T execute(AuthenticationRequest request, URI uri, HttpMethod method, Class<T> responseType) throws RestClientException {
+        LOG.debug("The parameter is {}", uri);
         RequestCallback requestCallback = new AuthorizationHeaderRequestCallback(accessTokenRepository, request);
         HttpMessageConverterExtractor<T> responseExtractor = new HttpMessageConverterExtractor<>(responseType, getMessageConverters());
+        return restTemplate.execute(uri, method, requestCallback, responseExtractor);
+    }
 
-        return restTemplate.execute(url, method, requestCallback, responseExtractor, urlVariables);
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     private List<HttpMessageConverter<?>> getMessageConverters() {
